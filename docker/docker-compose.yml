@@ -1,0 +1,115 @@
+version: "3.8"
+name: "vector-backend"
+networks:
+  network:
+
+
+volumes:
+  mysql_vector:
+  postgres_vector:
+  cache:
+
+
+services:
+  mysql:
+    image: mysql:oracle
+    container_name: ${DB_HOST}
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_TCP_PORT: ${DB_PORT}
+
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - mysql_vector:/var/lib/mysql
+    networks:
+      - network
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=password --execute \"SHOW DATABASES;\""
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+
+  pgvector:
+    image: ankane/pgvector
+    container_name: ${PG_VECTOR_DB_HOST}
+    environment:
+      POSTGRES_USER: ${PG_VECTOR_DB_USERNAME}
+      POSTGRES_PASSWORD: ${PG_VECTOR_DB_PASSWORD}
+      POSTGRES_DB: ${PG_VECTOR_DB_DATABASE}
+
+    ports:
+      - ${PG_VECTOR_DB_PORT}:${PG_VECTOR_DB_PORT}
+    volumes:
+      - postgres_vector:/var/lib/postgresql/data
+    networks:
+      - network
+    healthcheck:
+      test: pg_isready -U ${PG_VECTOR_DB_USERNAME} -d ${PG_VECTOR_DB_DATABASE}
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: vector-nginx
+    environment:
+      - PHP_ENDPOINT=vector-php
+      - NODE_ENDPOINT=vector-node
+    depends_on:
+      - php
+      - node
+    networks:
+      - network
+    ports:
+      - 8080:8080
+    volumes:
+      - ./config/nginx/nginx.${APP_ENV}.conf.template:/etc/nginx/templates/default.conf.template
+
+  php:
+    image: vector-php:development
+    container_name: vector-php
+    build:
+      context: .
+      target: ${APP_ENV}
+    env_file:
+      - ./.env
+    networks:
+      - network
+    volumes:
+      - ../src:/var/www/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      pgvector:
+        condition: service_healthy
+
+  node:
+    image: node:lts-alpine
+    container_name: vector-node
+    env_file:
+      - ./.env
+    networks:
+      - network
+    volumes:
+      - ../src:/var/www/app
+    ports:
+      - 5173:5173
+    working_dir: /var/www/app
+    entrypoint: sh -c 'npm install && if [ "$APP_ENV" = "production" ]; then npm run build; else npm run dev; fi;'
+
+  # ---- Redis Single for Local Development ----
+  redis:
+    platform: linux/amd64
+    container_name: vector-redis
+    image: redis:7.0
+    command: redis-server --requirepass bitnami
+    volumes:
+      - cache:/data
+    networks:
+      - network
