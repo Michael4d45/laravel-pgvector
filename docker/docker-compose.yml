@@ -8,6 +8,7 @@ volumes:
   mysql_vector:
   postgres_vector:
   cache:
+  python_torch:
 
 
 services:
@@ -20,9 +21,6 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_TCP_PORT: ${DB_PORT}
-
-    ports:
-      - ${DB_PORT}:${DB_PORT}
     volumes:
       - mysql_vector:/var/lib/mysql
     networks:
@@ -41,9 +39,6 @@ services:
       POSTGRES_USER: ${PG_VECTOR_DB_USERNAME}
       POSTGRES_PASSWORD: ${PG_VECTOR_DB_PASSWORD}
       POSTGRES_DB: ${PG_VECTOR_DB_DATABASE}
-
-    ports:
-      - ${PG_VECTOR_DB_PORT}:${PG_VECTOR_DB_PORT}
     volumes:
       - postgres_vector:/var/lib/postgresql/data
     networks:
@@ -69,20 +64,18 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./config/nginx/nginx.${APP_ENV}.conf.template:/etc/nginx/templates/default.conf.template
+      - ../laravel/config/nginx/nginx.${APP_ENV}.conf.template:/etc/nginx/templates/default.conf.template
 
   php:
     image: vector-php:development
     container_name: vector-php
     build:
-      context: .
+      context: ../laravel
       target: ${APP_ENV}
-    env_file:
-      - ./.env
     networks:
       - network
     volumes:
-      - ../src:/var/www/app
+      - ../laravel/src:/app
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,16 +85,22 @@ services:
   node:
     image: node:lts-alpine
     container_name: vector-node
-    env_file:
-      - ./.env
     networks:
       - network
     volumes:
-      - ../src:/var/www/app
+      - ../laravel/src:/app
     ports:
       - 5173:5173
-    working_dir: /var/www/app
+    working_dir: /app
     entrypoint: sh -c 'npm install && if [ "$APP_ENV" = "production" ]; then npm run build; else npm run dev; fi;'
+
+  python:
+    build:
+      context: ../python
+      target: ${APP_ENV}
+    volumes:
+      - python_torch:${TORCH_HOME}
+      - ../python/src:/app
 
   # ---- Redis Single for Local Development ----
   redis:
