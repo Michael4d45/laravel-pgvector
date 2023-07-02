@@ -1,5 +1,7 @@
 version: "3.8"
+
 name: "vector-backend"
+
 networks:
   network:
 
@@ -58,7 +60,6 @@ services:
       - NODE_ENDPOINT=vector-node
     depends_on:
       - php
-      - node
     networks:
       - network
     ports:
@@ -74,33 +75,25 @@ services:
       target: ${APP_ENV}
     networks:
       - network
-    volumes:
-      - ../laravel/src:/app
+    env_file:
+      - .env
     depends_on:
       mysql:
         condition: service_healthy
       pgvector:
         condition: service_healthy
 
-  node:
-    image: node:lts-alpine
-    container_name: vector-node
-    networks:
-      - network
-    volumes:
-      - ../laravel/src:/app
-    ports:
-      - 5173:5173
-    working_dir: /app
-    entrypoint: sh -c 'npm install && if [ "$APP_ENV" = "production" ]; then npm run build; else npm run dev; fi;'
-
   python:
+    image: vector-python:development
+    container_name: vector-python
     build:
       context: ../python
       target: ${APP_ENV}
     volumes:
       - python_torch:${TORCH_HOME}
       - ../python/src:/app
+    env_file:
+      - .env
 
   # ---- Redis Single for Local Development ----
   redis:

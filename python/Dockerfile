@@ -1,22 +1,24 @@
-# Use an official Python runtime as the base image
+# Base image
 FROM python:3.11 as base
 
-# Set the working directory in the container
+# Set up working directory
 WORKDIR /app
 
-# Copy the requirements file into the container
+# Install dependencies
 COPY requirements.txt .
-
-# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application's code into the container
-COPY src .
+# Copy application code
+COPY ./src .
 
-# Local development stage
+# Set the entrypoint command for local development
+ENTRYPOINT ["python", "-m", "flask", "run"]
+
+# Local development image
 FROM base as local
-# Define the default command to run when the container starts
-ENTRYPOINT ["tail", "-f", "/dev/null"]
 
+# Install additional development dependencies
+RUN pip install --no-cache-dir flask_debugtoolbar
+
+# Production image
 FROM base as production
-CMD ["python", "app.py"]
