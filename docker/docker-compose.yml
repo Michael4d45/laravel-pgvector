@@ -53,11 +53,13 @@ services:
       retries: 55
 
   nginx:
-    image: nginx:stable-alpine
+    image: vector-nginx:development
     container_name: vector-nginx
+    build:
+      context: ../laravel
+      target: nginx.${APP_ENV}
     environment:
       - PHP_ENDPOINT=vector-php
-      - NODE_ENDPOINT=vector-node
     depends_on:
       - php
     networks:
@@ -72,11 +74,11 @@ services:
     container_name: vector-php
     build:
       context: ../laravel
-      target: ${APP_ENV}
+      target: php.${APP_ENV}
     networks:
       - network
     env_file:
-      - .env
+      - ../.env
     depends_on:
       mysql:
         condition: service_healthy
@@ -91,9 +93,8 @@ services:
       target: ${APP_ENV}
     volumes:
       - python_torch:${TORCH_HOME}
-      - ../python/src:/app
     env_file:
-      - .env
+      - ../.env
 
   # ---- Redis Single for Local Development ----
   redis:

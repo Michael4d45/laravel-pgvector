@@ -1,5 +1,15 @@
+# Build production assets
+FROM node:lts-alpine as frontend_assets
+
+WORKDIR /app
+
+# Copy application source code
+COPY src/ .
+
+RUN npm install && npm run build
+
 # Stage 1: Base image
-FROM php:8.2-fpm as base
+FROM php:8.2-fpm as php.base
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -23,7 +33,7 @@ RUN chown www-data:www-data /app
 
 
 # Stage 2: Local development
-FROM base as local
+FROM php.base as php.local
 
 # Copy entrypoint script
 COPY entrypoint.dev.sh /usr/local/bin/entrypoint
@@ -36,25 +46,13 @@ USER www-data
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD ["/usr/local/sbin/php-fpm"]
 
-
-# Build production assets
-FROM node:lts-alpine as frontend_assets
-
-WORKDIR /app
-
-# Copy application source code
-COPY src/ .
-
-RUN npm install && npm run build
-
-
 # Stage 3: Production
-FROM base as production
+FROM php.base as php.production
 
 # Copy application source code
 COPY src/ .
 
-COPY --from=frontend_assets /app/public /app/public
+COPY --from=frontend_assets /app/public/build/manifest.json /app/public/build/manifest.json
 
 # Set ownership of the application
 RUN chown -R www-data:www-data /app \
@@ -70,8 +68,6 @@ RUN composer install \
     --no-plugins \
     --no-scripts \
     --prefer-dist
-RUN rm -f composer.json composer.lock
-
 
 
 # Copy entrypoint script
@@ -83,3 +79,21 @@ RUN chmod +x /usr/local/bin/entrypoint
 USER www-data
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD ["/usr/local/sbin/php-fpm"]
+
+
+# Base image
+FROM nginx:stable-alpine as nginx.base
+
+# Local image
+FROM nginx.base as nginx.local
+
+RUN rm /app/public/index.php
+
+# Production
+FROM nginx.base as nginx.production
+
+RUN rm -rf /app/public/build
+
+COPY --from=frontend_assets /app/public/build /app/public/build
+COPY src/public/favicon.ico /app/public/
+COPY src/public/robots.txt /app/public/

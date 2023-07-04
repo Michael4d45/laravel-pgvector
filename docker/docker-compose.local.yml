@@ -9,16 +9,23 @@ services:
     volumes:
       - ../laravel/src:/app
     env_file:
-      - .env
+      - ../.env
     ports:
       - 5173:5173
     working_dir: /app
     entrypoint: sh -c 'npm install && npm run dev'
 
-  nginx:
-    depends_on:
-      - node
-
   php:
     volumes:
       - ../laravel/src:/app
+
+  python:
+    volumes:
+      - ../python/src:/app
+    ports:
+      - ${FLASK_PORT}:${FLASK_PORT}
+
+  nginx:
+    volumes:
+      - ../laravel/src/public/favicon.ico:/app/public/favicon.ico
+      - ../laravel/src/public/hot:/app/public/hot
