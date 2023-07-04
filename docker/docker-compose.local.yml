@@ -27,5 +27,6 @@ services:
 
   nginx:
     volumes:
+      - /app/public
       - ../laravel/src/public/favicon.ico:/app/public/favicon.ico
       - ../laravel/src/public/hot:/app/public/hot

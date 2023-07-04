@@ -87,8 +87,6 @@ FROM nginx:stable-alpine as nginx.base
 # Local image
 FROM nginx.base as nginx.local
 
-RUN rm /app/public/index.php
-
 # Production
 FROM nginx.base as nginx.production
 
