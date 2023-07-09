@@ -95,3 +95,4 @@ RUN rm -rf /app/public/build
 COPY --from=frontend_assets /app/public/build /app/public/build
 COPY src/public/favicon.ico /app/public/
 COPY src/public/robots.txt /app/public/
+COPY config/nginx/nginx.production.conf.template /etc/nginx/templates/default.conf.template

@@ -5,14 +5,6 @@ name: "vector-backend"
 networks:
   network:
 
-
-volumes:
-  mysql_vector:
-  postgres_vector:
-  cache:
-  python_torch:
-
-
 services:
   mysql:
     image: mysql:oracle
@@ -23,8 +15,6 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_TCP_PORT: ${DB_PORT}
-    volumes:
-      - mysql_vector:/var/lib/mysql
     networks:
       - network
     healthcheck:
@@ -41,8 +31,6 @@ services:
       POSTGRES_USER: ${PG_VECTOR_DB_USERNAME}
       POSTGRES_PASSWORD: ${PG_VECTOR_DB_PASSWORD}
       POSTGRES_DB: ${PG_VECTOR_DB_DATABASE}
-    volumes:
-      - postgres_vector:/var/lib/postgresql/data
     networks:
       - network
     healthcheck:
@@ -66,8 +54,6 @@ services:
       - network
     ports:
       - 8080:8080
-    volumes:
-      - ../laravel/config/nginx/nginx.${APP_ENV}.conf.template:/etc/nginx/templates/default.conf.template
 
   php:
     image: vector-php:development
@@ -91,8 +77,6 @@ services:
     build:
       context: ../python
       target: ${APP_ENV}
-    volumes:
-      - python_torch:${TORCH_HOME}
     env_file:
       - ../.env
 
@@ -102,7 +86,5 @@ services:
     container_name: vector-redis
     image: redis:7.0
     command: redis-server --requirepass bitnami
-    volumes:
-      - cache:/data
     networks:
       - network
