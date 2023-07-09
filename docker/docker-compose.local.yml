@@ -37,7 +37,6 @@ services:
     volumes:
       - nginx:/app/public
       - ../laravel/src/public/favicon.ico:/app/public/favicon.ico
-      - ../laravel/src/public/hot:/app/public/hot
       - ../laravel/config/nginx/nginx.local.conf.template:/etc/nginx/templates/default.conf.template
 
   mysql:
