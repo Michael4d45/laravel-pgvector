@@ -2,7 +2,6 @@ version: "3.8"
 
 volumes:
   nginx:
-  mysql:
   postgres:
   cache:
   python:
@@ -38,10 +37,6 @@ services:
       - nginx:/app/public
       - ../laravel/src/public/favicon.ico:/app/public/favicon.ico
       - ../laravel/config/nginx/nginx.local.conf.template:/etc/nginx/templates/default.conf.template
-
-  mysql:
-    volumes:
-      - mysql:/var/lib/mysql
 
   pgvector:
     volumes:

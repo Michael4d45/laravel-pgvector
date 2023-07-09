@@ -6,35 +6,17 @@ networks:
   network:
 
 services:
-  mysql:
-    image: mysql:oracle
-    container_name: ${DB_HOST}
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_TCP_PORT: ${DB_PORT}
-    networks:
-      - network
-    healthcheck:
-      test: "/usr/bin/mysql --user=root --password=password --execute \"SHOW DATABASES;\""
-      start_period: 5s
-      interval: 5s
-      timeout: 5s
-      retries: 55
-
   pgvector:
     image: ankane/pgvector
-    container_name: ${PG_VECTOR_DB_HOST}
+    container_name: ${DB_HOST}
     environment:
-      POSTGRES_USER: ${PG_VECTOR_DB_USERNAME}
-      POSTGRES_PASSWORD: ${PG_VECTOR_DB_PASSWORD}
-      POSTGRES_DB: ${PG_VECTOR_DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
     networks:
       - network
     healthcheck:
-      test: pg_isready -U ${PG_VECTOR_DB_USERNAME} -d ${PG_VECTOR_DB_DATABASE}
+      test: pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}
       start_period: 5s
       interval: 5s
       timeout: 5s
@@ -66,8 +48,6 @@ services:
     env_file:
       - ../.env
     depends_on:
-      mysql:
-        condition: service_healthy
       pgvector:
         condition: service_healthy
 

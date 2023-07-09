@@ -10,7 +10,6 @@ if [ ! -f "vendor/autoload.php" ]; then
 fi
 
 echo "Seeding the database"
-php artisan db:wipe --database=pgsql
 php artisan migrate:fresh --seed
 
 echo "Starting php-fpm daemon"
